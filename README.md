@@ -23,4 +23,5 @@ n8n · OpenAI · Supabase · Google Drive / Sheets · Gmail
 2. Reemplazá los `YOUR_...` por tus propias credenciales e IDs.
 
 ## Resultado
-(captura del canvas o del mail con el cuadro comparativo)
+![Flujo](Shipping paperwork automation.png)
+
