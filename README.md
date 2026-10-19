@@ -23,6 +23,6 @@ n8n · OpenAI · Supabase · Google Drive / Sheets · Gmail
 2. Reemplazá los `YOUR_...` por tus propias credenciales e IDs.
 
 ## Resultado
-![Flujo del workflow](Shipping paperwork automation.png)
+![Flujo del workflow](flujo.png)
 
 
