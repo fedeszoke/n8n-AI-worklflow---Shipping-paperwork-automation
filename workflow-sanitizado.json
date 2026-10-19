@@ -1,0 +1,3182 @@
+{
+  "name": "Interpretacion de documentos - Comercio exterior",
+  "nodes": [
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Documento: {{ $json.filename }}\n\n{{ $json.texto }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Sos un analista de comercio exterior de una agencia de despachantes de aduana (Argentina). Recibís el texto de una factura comercial, proforma o invoice.\n\nExtraé todos los campos del formato de salida requerido. En \"items\" registrá CADA renglón de la factura con su número de parte (SKU, codigo de cada producto que el proveedor asigna internamente), cantidad, precio unitario e importe — este detalle se usa después para cruzar contra el packing list.\n\nEl contenido puede venir como CSV exportado de una planilla Excel. En ese caso las columnas pueden estar desalineadas y puede haber celdas vacías o repetidas por celdas combinadas — interpretá la estructura de la factura a partir del contenido, no de la posición de las columnas.\n\nSi un campo no aparece en el documento, usá null. No inventes datos ni calcules valores que no figuren.",
+          "maxIterations": 4,
+          "enableStreaming": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3168,
+        -1520
+      ],
+      "id": "1c617aa1-d369-4883-bdf2-4eba7b5703e0",
+      "name": "Agente Facturas",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5af181e2-0172-4a74-b742-d2452188a0d7",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "application/pdf",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "PDF"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "afd53ba5-321b-4c0b-9612-acf0d60b8dc3",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "text/csv",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "CSV"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "73655670-3448-4630-9e26-49855e5a736e",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "application/vnd.ms-excel",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "XLS"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ccce9331-ac11-4c54-ad55-abcb0f1916d3",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "XLSX"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d0c00000-0000-0000-0000-000000000001",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  },
+                  {
+                    "id": "d0c00000-0000-0000-0000-000000000002",
+                    "leftValue": "={{ $binary.attachment_0.mimeType }}",
+                    "rightValue": "application/msword",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "or"
+              },
+              "renameOutput": true,
+              "outputKey": "DOCX"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -624,
+        -96
+      ],
+      "id": "44ef1984-fae2-415a-8546-4ada15ae6be5",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "binaryPropertyName": "attachment_0",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        -256
+      ],
+      "id": "4ae6de6b-62b0-44ef-b259-6bcba104648b",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "text",
+        "binaryPropertyName": "attachment_0",
+        "destinationKey": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        240,
+        -64
+      ],
+      "id": "85a660dc-d14e-490a-9f2a-e940f0a8c60a",
+      "name": "Extract from File1"
+    },
+    {
+      "parameters": {
+        "jsCode": "// El tipo de documento NO se infiere: lo declara el operador en el portal y\n// viaja en un campo propio del payload, no metido en el nombre del archivo.\n//\n// El portal manda un campo \"docs\" con un JSON: una entrada por archivo.\n//   [{ nombre_archivo, tipo_doc, documento_id, grupo_id }]\n//\n// El match se hace por NOMBRE DE ARCHIVO, así que no depende del orden en que\n// n8n arme los binarios. Si el nombre no aparece, cae al índice; si tampoco,\n// queda 'desconocido' y el switch lo manda al fallback (igual va a Drive).\n//\n// Compatibilidad: si no viene \"docs\", se usa el viejo prefijo factura__ / etc.\n// para no romper nada durante la transición. Sacar ese bloque cuando el portal\n// ya mande \"docs\" siempre.\n// ============================================================================\n \nconst RAMAS = ['factura', 'anexo', 'transporte', 'packing_list'];\n \n// Los 14 tipos del portal contra las 4 ramas del workflow.\n// Lo que no está acá no tiene agente: va a Drive sin pasar por IA.\nconst RAMA_POR_TIPO = {\n  proforma: 'factura',\n  factura_comercial: 'factura',\n  factura_definitiva: 'factura',\n  bl: 'transporte',\n  awb: 'transporte',\n  crt: 'transporte',\n  packing_list: 'packing_list',\n  anexo: 'anexo',\n};\n \nconst input = $input.all();\nconst out = [];\n \nfor (let idx = 0; idx < input.length; idx++) {\n  const item = input[idx];\n  const body = item.json?.body ?? {};\n \n  const numeroOp = (body.numero_operacion ?? '').toString().trim();\n  const operacionId = (body.operacion_id ?? '').toString().trim();\n  // messageId agrupa la operación en el cuadro comparativo.\n  // operacion_id es un uuid: no colisiona entre clientes como sí puede el legajo.\n  const groupId = numeroOp || operacionId || ('op_' + Date.now());\n \n  let docs = [];\n  try {\n    docs = typeof body.docs === 'string' ? JSON.parse(body.docs) : (body.docs ?? []);\n  } catch (e) {\n    docs = [];\n  }\n  if (!Array.isArray(docs)) docs = [];\n \n  const porNombre = new Map();\n  for (const d of docs) {\n    if (d && d.nombre_archivo) porNombre.set(String(d.nombre_archivo), d);\n  }\n \n  const binarios = item.binary ?? {};\n  // data0, data1, data10... ordenados numéricamente, no alfabéticamente\n  const keys = Object.keys(binarios).sort((a, b) => {\n    const na = parseInt(String(a).replace(/\\D/g, ''), 10) || 0;\n    const nb = parseInt(String(b).replace(/\\D/g, ''), 10) || 0;\n    return na - nb;\n  });\n \n  for (let i = 0; i < keys.length; i++) {\n    const bin = binarios[keys[i]];\n    const rawName = (bin.fileName ?? '').toString();\n \n    let filename = rawName;\n    let tipoPortal = '';\n    let rama = 'desconocido';\n    let documentoId = null;\n    let grupoId = null;\n \n    const meta = porNombre.get(rawName) ?? docs[i] ?? null;\n \n    if (meta) {\n      tipoPortal = (meta.tipo_doc ?? '').toString().toLowerCase();\n      rama = RAMA_POR_TIPO[tipoPortal] ?? 'desconocido';\n      documentoId = meta.documento_id ?? null;\n      grupoId = meta.grupo_id ?? null;\n    } else {\n      // --- compatibilidad con el formato viejo: prefijo en el nombre ---\n      const m = rawName.match(/^([a-zA-Z_]+)__([\\s\\S]*)$/);\n      if (m && RAMAS.includes(m[1].toLowerCase())) {\n        rama = m[1].toLowerCase();\n        tipoPortal = rama;\n        filename = m[2];\n      }\n      // --- fin bloque de compatibilidad ---\n    }\n \n    out.push({\n      json: {\n        messageId: groupId,\n        threadId: groupId,\n        operacion_id: operacionId || null,\n        numero_operacion: numeroOp || null,\n        documento_id: documentoId,\n        grupo_id: grupoId,\n        filename: filename || null,\n        mimeType: bin.mimeType ?? null,\n        tipo_portal: tipoPortal || 'otro',   // el tipo real, con sus 14 valores\n        tipo_doc: RAMAS.includes(rama) ? rama : 'desconocido',  // la rama del switch\n      },\n      binary: { attachment_0: bin },\n      pairedItem: { item: idx },\n    });\n  }\n}\n \nreturn out;\n "
+      },
+      "id": "77dff79b-79a1-42f5-a928-f0da990de4bf",
+      "name": "Split Adjuntos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -848,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "responsesApiEnabled": false,
+        "options": {
+          "reasoningEffort": "low",
+          "timeout": 900000,
+          "maxRetries": 0
+        }
+      },
+      "id": "666e3138-9977-45a9-826f-e9b9505a642a",
+      "name": "OpenAI Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3072,
+        304
+      ],
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Los documentos vienen etiquetados desde el portal (tipo_doc en Split Adjuntos).\n// Ya no se clasifica por palabras clave: solo se traslada el texto extraido y la etiqueta.\nconst LIMITE = 30000;\nconst origen = $('Split Adjuntos').item.json;\nconst textoCompleto = ($json.text ?? JSON.stringify($json)).toString();\nconst texto = textoCompleto.slice(0, LIMITE);\n\nreturn {\n  json: {\n    texto,\n    tipo_doc: origen.tipo_doc ?? 'desconocido',\n    messageId: origen.messageId,\n    filename: origen.filename,\n  },\n};"
+      },
+      "id": "3b4abdd4-107c-47df-a7b1-d98d6fc5d98b",
+      "name": "Clasificar Documento",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -144
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a1000000-0000-0000-0000-000000000001",
+                    "leftValue": "={{ $json.tipo_doc }}",
+                    "rightValue": "factura",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Factura"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a1000000-0000-0000-0000-000000000004",
+                    "leftValue": "={{ $json.tipo_doc }}",
+                    "rightValue": "anexo",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Anexo"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a1000000-0000-0000-0000-000000000002",
+                    "leftValue": "={{ $json.tipo_doc }}",
+                    "rightValue": "transporte",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Transporte"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a1000000-0000-0000-0000-000000000003",
+                    "leftValue": "={{ $json.tipo_doc }}",
+                    "rightValue": "packing_list",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "Packing List"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "44f8e422-a0dc-4b49-a1cb-1acff3d44448",
+      "name": "Tipo de Documento",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1872,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Documento: {{ $json.filename }}\n\n{{ $json.texto }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Sos un analista de comercio exterior de una agencia de despachantes de aduana (Argentina). Recibís el texto de un documento de transporte: Bill of Lading (BL), Air Waybill (AWB) o CRT (Carta de Porte Internacional por Carretera).\n\nExtraé todos los campos del formato de salida requerido:\n- En \"contenedores_detalle\" registrá cada contenedor con su precinto (seal) y peso bruto — se cruza contra el packing list.\n- En \"mercaderia_detalle\" registrá CADA renglón de la descripción de mercadería (Description of Goods) tal como aparece: bultos, tipo de bulto, descripción, contenedor, peso, volumen, PO y NCM del renglón. No agrupes ni sumes renglones.\n- Registrá también PO, NCM y si el flete es Collect o Prepaid.\n- \"tipo_transporte\": 'naviera' si el documento es un BL (marítimo), 'aereo' si es un AWB, 'terrestre' si es un CRT.\n- Para pais_origen, devolvé exactamente uno de los valores permitidos. Si el documento menciona el país en inglés o con una variante (P.R. CHINA, KOREA REP., THE NETHERLANDS), mapealo al valor de la lista. Si el país no está en la lista o no podés determinarlo, devolvé null — no lo aproximes.\n- \"destino\": puerto o aeropuerto de destino (Port of Discharge / Place of Delivery).\n- \"cantidad_contenedores\": contá los contenedores; debe coincidir con la cantidad de entradas de contenedores_detalle. Si no hay contenedores, null.\n\n\nSi un campo no aparece en el documento, usá null. No inventes datos ni calcules valores que no figuren.",
+          "maxIterations": 4,
+          "enableStreaming": false
+        }
+      },
+      "id": "e91b8645-7c9f-4feb-a99c-22b81d03bdc6",
+      "name": "Agente Transporte",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3168,
+        -592
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Documento: {{ $json.filename }}\n\n{{ $json.texto }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Sos un analista de comercio exterior de una agencia de despachantes de aduana (Argentina). Recibís el texto de un PACKING LIST, normalmente exportado como CSV desde una planilla.\n\n**NO transcribas los renglones de la tabla.** Ese trabajo lo hace el sistema después. Tu tarea es distinta y mucho más corta: leer el documento, entender cómo está armado, y devolver el mapa para que el sistema pueda extraer los renglones solo.\n\nSi el documento tiene 500 renglones, tu respuesta sigue siendo del mismo largo. No copies filas.\n\n## El mapa de la tabla (campo \"tabla\")\n\nUbicá la tabla de mercadería — la que lista los artículos con sus cantidades — y devolvé:\n\n**`encabezado_texto`**: la línea de encabezados, copiada TEXTUALMENTE y COMPLETA, con todas sus comas y celdas vacías. No la resumas ni la limpies. El sistema la busca literalmente en el texto, así que un solo carácter cambiado la vuelve inservible.\n\n**`primera_fila_datos_texto`**: la primera línea con datos reales de mercadería, también textual y completa. Cuidado con tres líneas que NO son datos y suelen confundirse:\n- la línea de encabezados,\n- la línea de subtítulos de unidades (por ejemplo `,,,,,,,UNITS,FOC,,,(kgs),(kgs),(CBM)`),\n- la fila de totales generales, que trae los grandes totales y ninguna descripción de artículo.\n\n**Los `col_*`**: el número de columna de cada campo, contando desde 1 en la primera columna de la línea. Contá TODAS las columnas, incluidas las vacías. En un CSV eso equivale a contar las comas.\n\nEjemplo. Si el encabezado es:\n\n`CONTAINER NO.,SEAL NO.,P/L NO.,C/NO.,P/NO.,PART NO.,DESCRIPTION OF GOODS,Qty,,NO. OF CTNS,NO. OF PACKAGES,N.W.,G.W.,MEAS.`\n\nentonces `col_contenedor` = 1, `col_numero_parte` = 6, `col_cantidad_comercial` = 8 (Qty), `col_cantidad_foc` = 9 (la columna que en la línea de subtítulos dice FOC), `col_bultos` = 11, `col_peso_bruto` = 13 (G.W.).\n\nSi alguna de esas columnas no existe en el documento, devolvé null en ese campo. No la inventes ni la fuerces a otra.\n\n## Columnas de cantidad\n\nOjo con distinguirlas:\n- **Comercial**: Qty, UNITS, Quantity. Es la mercadería facturada.\n- **FOC**: Free of Charge, sin cargo. Suele estar pegada a la derecha de UNITS y vacía en casi todos los renglones.\n- **Total derivado**: Total Quantity, Final Total Quantity. Es la suma de las dos anteriores. IGNORALA: no la mapees a ningún `col_*`.\n\n## Resto de los campos\n\n\"contenedores_detalle\": una entrada por contenedor distinto, con su número y su precinto. Nada más — los pesos y bultos los calcula el sistema sumando los renglones de cada contenedor.\n\n\"cantidad_total_comercial\" y \"cantidad_total_foc\": los grandes totales, copiados de la fila de totales del documento, cada uno de su columna. Como números, sin comillas. Si el documento no los declara, null: no los calcules.\n\nSi un campo no aparece en el documento, usá null. No inventes datos ni calcules valores que no figuren.",
+          "maxIterations": 4,
+          "enableStreaming": false
+        }
+      },
+      "id": "0d885c38-f3a7-478a-91bd-7c133da06ba3",
+      "name": "Agente Packing List",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3168,
+        -112
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"cliente_importador\": { \"type\": [\"string\", \"null\"], \"description\": \"Cliente / Importador\" },\n    \"proveedor\": { \"type\": [\"string\", \"null\"], \"description\": \"Proveedor / exportador\" },\n    \"numero_invoice\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de invoice comercial\" },\n    \"numero_invoice_foc\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de invoice FOC, solo si aplica\" },\n    \"valor_fob_total\": { \"type\": [\"number\", \"null\"], \"description\": \"Valor FOB total\" },\n    \"flete\": { \"type\": [\"number\", \"null\"], \"description\": \"Monto del flete si figura en la factura\" },\n    \"moneda\": { \"type\": [\"string\", \"null\"], \"description\": \"Moneda de la factura, ej. USD, EUR\" },\n    \"incoterm\": { \"type\": [\"string\", \"null\"], \"description\": \"Incoterm, ej. FOB, CIF, EXW\" },\n    \"po_numero\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de orden de compra / purchase order\" },\n    \"items\": {\n      \"type\": [\"array\", \"null\"],\n      \"description\": \"Una entrada por renglón de la factura. En la factura cada número de parte aparece en un solo renglón.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"numero_parte\": { \"type\": [\"string\", \"null\"], \"description\": \"Número de parte / código del artículo (código del proveedor o del cliente)\" },\n          \"descripcion\": { \"type\": [\"string\", \"null\"] },\n          \"cantidad\": { \"type\": [\"number\", \"null\"] },\n          \"precio_unitario\": { \"type\": [\"number\", \"null\"] },\n          \"unidad_medida\": {\n  \"type\": [\"string\", \"null\"],\n  \"enum\": [\"KG\",\"MTS\",\"LT\",\"PC\",\"PAA\",\"ST\",\"GR\",\"MLM\",\"CTM\",\"TOM\",\"MLT\", null],\n  \"description\": \"Unidad de medida del renglón, normalizada a uno de estos códigos exactos. Reglas de mapeo: KG = kilos, kgs, kilogramos, kilograms; MTS = metros, meters, m, mtr; LT = litros, liters, l; PC = unidad, unidades, pieza, piezas, pcs, pieces, units, u, ea, each; PAA = par, pares, pair, pairs, pr; ST = set, sets, juego, juegos, kit; GR = gramos, grams, g; MLM = milímetros, millimeters, mm; CTM = centímetros, centimeters, cm; TOM = toneladas, tons, tonnes, tn, t; MLT = mililitros, milliliters, ml. Si la unidad no figura en el documento o no encaja en ninguna de estas categorías, devolver null. Nunca inventar una unidad.\"\n},\n          \"importe\": { \"type\": [\"number\", \"null\"], \"description\": \"Importe neto del renglón\" }\n        },\n        \"required\": [\"numero_parte\", \"descripcion\", \"cantidad\", \"precio_unitario\", \"importe\"]\n      }\n    },\n    \"cantidad_total\": { \"type\": [\"number\", \"null\"], \"description\": \"Cantidad total de unidades de la factura\" }\n  },\n  \"required\": [\"cliente_importador\", \"proveedor\", \"numero_invoice\", \"numero_invoice_foc\", \"valor_fob_total\", \"flete\", \"seguro\", \"moneda\", \"incoterm\", \"po_numero\", \"items\", \"cantidad_total\"]\n}"
+      },
+      "id": "4b27bb77-f4b0-4c8d-ba3b-6658a7bada1d",
+      "name": "Parser Facturas",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3328,
+        -1328
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"tipo_documento\": { \"type\": [\"string\", \"null\"], \"description\": \"BL, AWB o CRT\" },\n    \"tipo_transporte\": { \"type\": [\"string\", \"null\"], \"enum\": [\"naviera\", \"terrestre\", \"aereo\", null], \"description\": \"Modo de transporte: 'naviera' si es marítimo (BL), 'aereo' si es AWB, 'terrestre' si es CRT\" },\n    \"numero_conocimiento\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de conocimiento de embarque (BL/AWB/CRT)\" },\n    \"transporte\": { \"type\": [\"string\", \"null\"], \"description\": \"Naviera, aerolínea o empresa de transporte\" },\n    \"origen\": { \"type\": [\"string\", \"null\"], \"description\": \"País de origen\" },\n    \"destino\": { \"type\": [\"string\", \"null\"], \"description\": \"Destino final: puerto o aeropuerto de destino (Port of Discharge / Place of Delivery)\" },\n    \"cantidad_contenedores\": { \"type\": [\"number\", \"null\"], \"description\": \"Cantidad total de contenedores. Igual a la cantidad de entradas de contenedores_detalle. Null si no aplica (aéreo/terrestre sin contenedor)\" },\n    \"contenedores_detalle\": {\n      \"type\": [\"array\", \"null\"],\n      \"description\": \"Una entrada por contenedor, para cruzar contra el packing list\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"contenedor\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de contenedor\" },\n          \"precinto\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de precinto / seal number\" },\n          \"peso_bruto\": { \"type\": [\"string\", \"null\"], \"description\": \"Peso bruto (G.W.) de este contenedor, con unidad\" }\n        },\n        \"required\": [\"contenedor\", \"precinto\", \"peso_bruto\"]\n      }\n    },\n    \"mercaderia_detalle\": {\n      \"type\": [\"array\", \"null\"],\n      \"description\": \"Una entrada por renglón de mercadería declarada en el documento (Description of Goods), tal como aparece, sin agrupar ni sumar\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"descripcion\": { \"type\": [\"string\", \"null\"], \"description\": \"Descripción de la mercadería del renglón\" },\n          \"cantidad_bultos\": { \"type\": [\"number\", \"null\"], \"description\": \"Cantidad de bultos/packages del renglón\" },\n          \"tipo_bulto\": { \"type\": [\"string\", \"null\"], \"description\": \"Tipo de bulto: PKG, CTN, PALLET, etc.\" },\n          \"contenedor\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de contenedor al que corresponde el renglón, si figura\" },\n          \"peso_bruto\": { \"type\": [\"string\", \"null\"], \"description\": \"Peso bruto del renglón con unidad\" },\n          \"volumen\": { \"type\": [\"string\", \"null\"], \"description\": \"Volumen del renglón con unidad, ej. '59.441 M3'\" },\n          \"po_numero\": { \"type\": [\"string\", \"null\"], \"description\": \"PO referenciado en el renglón, si figura\" },\n          \"ncm\": { \"type\": [\"string\", \"null\"], \"description\": \"NCM / HS code del renglón, si figura\" }\n        },\n        \"required\": [\"descripcion\", \"cantidad_bultos\", \"tipo_bulto\", \"contenedor\", \"peso_bruto\", \"volumen\", \"po_numero\", \"ncm\"]\n      }\n    },\n    \"po_numero\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de orden de compra / PO referenciado en el documento\" },\n    \"ncm\": { \"type\": [\"string\", \"null\"], \"description\": \"Posición NCM / HS code, si figura\" },\n    \"flete_condicion\": { \"type\": [\"string\", \"null\"], \"description\": \"'Collect' o 'Prepaid', según diga Freight Collect o Freight Prepaid\" },\n    \"flete\": { \"type\": [\"number\", \"null\"], \"description\": \"Monto del flete, solo si es Freight Collect y figura en el documento\" },\n    \"seguro\": { \"type\": [\"number\", \"null\"], \"description\": \"Monto del seguro\" },\n\"pais_origen\": {\n  \"type\": [\"string\", \"null\"],\n  \"enum\": [\n\"ALEMANIA\",\"ARGENTINA\",\"AUSTRIA\",\"BELGICA\",\"BRASIL\",\"CANADA\",\"CHILE\",\"CHINA\",\"DINAMARCA\",\"EEUU\",\"ESPAÑA\",\"FILIPINA\",\"FRANCIA\",\"HOLANDA\",\"HONG KONG\",\"HUNGRIA\",\"INDONESIA\",\"ISRAEL\",\"ITALIA\",\"JAPON\",\"KOREA\",\"MALASIA\",\"MEXICO\",\"NORUEGA\",\"POLONIA\",\"PORTUGAL\",\"REINO UNIDO\",\"REPUBLICA CHECA\",\"SINGAPUR\",\"SUECIA\",\"SUIZA\",\"TAILANDIA\",\"TAIWAN\",\"TURQUIA\",\"URUGUAY\",\"VIETNAM\",\n    null\n  ],\n  \"description\": \"País de origen de la mercadería, exactamente uno de los valores de la lista. Si el documento nombra el país de otra forma (P.R. CHINA, PRC, People's Republic of China), mapealo al valor de la lista. Si no podés determinarlo con certeza, devolvé null.\"\n},\n    \"peso_bruto_total\": { \"type\": [\"string\", \"null\"], \"description\": \"Peso bruto total con unidad\" }\n  },\n  \"required\": [\"tipo_documento\", \"tipo_transporte\", \"numero_conocimiento\", \"transporte\", \"destino\", \"cantidad_contenedores\", \"contenedores_detalle\", \"mercaderia_detalle\", \"po_numero\", \"ncm\", \"flete_condicion\", \"flete\", \"pais_origen\", \"peso_bruto_total\"]\n}"
+      },
+      "id": "62e11da8-1a6c-4cd6-addd-99ae1b9bcc49",
+      "name": "Parser Transporte",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3344,
+        -384
+      ]
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"po_numero\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de orden de compra / purchase order\" },\n    \"ncm\": { \"type\": [\"string\", \"null\"], \"description\": \"Posición NCM / HS code, si figura\" },\n    \"tabla\": {\n      \"type\": [\"object\", \"null\"],\n      \"description\": \"Mapa de la tabla de mercadería. NO transcribas los renglones: describí dónde están y qué columna es cada cosa. El sistema los extrae después con esta información.\",\n      \"properties\": {\n        \"encabezado_texto\": { \"type\": [\"string\", \"null\"], \"description\": \"La línea de encabezados de la tabla, copiada TEXTUALMENTE y COMPLETA, tal cual aparece en el documento, incluidas las comas y las celdas vacías. Ejemplo: 'CONTAINER NO.,SEAL NO.,P/L NO.,C/NO.,P/NO.,PART NO.,DESCRIPTION OF GOODS,Qty,,NO. OF CTNS,NO. OF PACKAGES,N.W.,G.W.,MEAS.'\" },\n        \"primera_fila_datos_texto\": { \"type\": [\"string\", \"null\"], \"description\": \"La PRIMERA línea de datos reales de la tabla, copiada TEXTUALMENTE y COMPLETA. No es el encabezado, ni la línea de subtítulos de unidades, ni la fila de totales generales: es el primer renglón de mercadería.\" },\n        \"col_numero_parte\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna del número de parte, contando desde 1 en la primera columna de la línea. Contá TODAS las columnas, incluidas las vacías.\" },\n        \"col_cantidad_comercial\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna de la cantidad facturada (Qty / UNITS / Quantity), contando desde 1. Si hay una sola columna de cantidad, es esta.\" },\n        \"col_cantidad_foc\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna de la cantidad free of charge (FOC), contando desde 1. Si el documento no tiene columna FOC, devolver null.\" },\n        \"col_contenedor\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna del n° de contenedor, contando desde 1. Si no hay, null.\" },\n        \"col_peso_bruto\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna del peso bruto del renglón (G.W.), contando desde 1. Si no hay, null.\" },\n        \"col_bultos\": { \"type\": [\"number\", \"null\"], \"description\": \"Número de columna de la cantidad de bultos del renglón (NO. OF PACKAGES, o en su defecto NO. OF CTNS), contando desde 1. Si no hay, null.\" }\n      },\n      \"required\": [\"encabezado_texto\", \"primera_fila_datos_texto\", \"col_numero_parte\", \"col_cantidad_comercial\", \"col_cantidad_foc\", \"col_contenedor\", \"col_peso_bruto\", \"col_bultos\"]\n    },\n    \"contenedores_detalle\": {\n      \"type\": [\"array\", \"null\"],\n      \"description\": \"Una entrada por contenedor distinto (no por renglón). Solo número y precinto: los pesos y bultos los calcula el sistema sumando los renglones.\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"contenedor\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de contenedor\" },\n          \"precinto\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de precinto / seal number\" }\n        },\n        \"required\": [\"contenedor\", \"precinto\"]\n      }\n    },\n    \"cantidad_total_comercial\": { \"type\": [\"number\", \"string\", \"null\"], \"description\": \"Total general de la columna Qty / UNITS, tal como lo declara el packing list en su fila de totales. Devolver como número. Si no lo declara, null: no calcularlo.\" },\n    \"cantidad_total_foc\": { \"type\": [\"number\", \"string\", \"null\"], \"description\": \"Total general de la columna FOC, tal como lo declara el documento. Devolver como número. Si no hay columna o no figura, null. Nunca calcularlo.\" },\n    \"peso_neto\": { \"type\": [\"string\", \"number\", \"null\"], \"description\": \"Peso neto total con unidad\" },\n    \"peso_bruto\": { \"type\": [\"string\", \"number\", \"null\"], \"description\": \"Peso bruto total con unidad\" },\n    \"cantidad_contenedores\": { \"type\": [\"number\", \"string\", \"null\"], \"description\": \"Cantidad de contenedores si el documento la declara; si no, null\" }\n  },\n  \"required\": [\"po_numero\", \"ncm\", \"tabla\", \"contenedores_detalle\", \"cantidad_total_comercial\", \"cantidad_total_foc\", \"peso_neto\", \"peso_bruto\", \"cantidad_contenedores\"]\n}"
+      },
+      "id": "687b2fb7-42f7-4352-badd-b6ee5c80674d",
+      "name": "Parser Packing List",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3328,
+        96
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Documento: {{ $json.filename }}\n\n{{ $json.texto }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "Sos un analista de comercio exterior de una agencia de despachantes de aduana (Argentina). Recibís el contenido de un ANEXO de factura: la planilla que detalla renglón por renglón los artículos comprados.\n\nTu tarea es COPIAR datos del documento al formato de salida. No calculás, no sumás, no deducís. Si un valor no figura, va null.\n\n## Renglones\n\nEn \"items\" registrá CADA renglón del anexo, uno por uno. Este detalle se cruza después contra el packing list y contra la factura, así que no agrupes ni consolides renglones aunque compartan número de parte.\n\n## Columnas de cantidad — leer con atención\n\nUn anexo puede traer hasta TRES columnas distintas de cantidad. Identificalas por su encabezado, no por su posición:\n\n1. **Cantidad comercial** — encabezados típicos: Quantity, Qty, Q, UNITS, Quantity Commercial Invoice, Cantidad. Es la mercadería facturada.\n2. **Cantidad FOC** — encabezados típicos: FOC, Free of Charge, Total Qty FOC, Sin cargo. Es la mercadería que viaja sin costo. Suele estar vacía en la mayoría de los renglones.\n3. **Total final** — encabezados típicos: Final Total Quantity, Total Quantity, Total. Es una columna DERIVADA: su valor es la suma de las dos anteriores.\n\nReglas, sin excepciones:\n\n- `cantidad_comercial` = SOLO la columna del punto 1.\n- `cantidad_foc` = SOLO la columna del punto 2.\n- La columna del punto 3 se IGNORA por completo. No la copies a ningún campo. Existe para comodidad del proveedor y la suma la hace después el sistema.\n- Si el anexo tiene UNA SOLA columna de cantidad y ninguna columna FOC, su valor va a `cantidad_comercial` y `cantidad_foc` queda null.\n- Si hay columna FOC pero la celda de este renglón está vacía, tiene un guión o un cero, `cantidad_foc` = 0. Si no hay columna FOC en el documento, `cantidad_foc` = null.\n- NUNCA sumes dos columnas. NUNCA calcules una columna restando otras. NUNCA elijas una columna por estar más a la derecha o más a la izquierda.\n\nCómo reconocer la columna derivada si los encabezados son ambiguos: si en varios renglones el valor de una columna es exactamente igual a la suma de otras dos, esa columna es la derivada. Ignorala y usa las dos que la componen.\n\nEjemplo. Encabezados: `PART NO. | QUANTITY COMMERCIAL INVOICE | TOTAL QTY. FOC | FINAL TOTAL QUANTITY`, renglón `40101-002046 | 1047 | 33 | 1080`.\nCorrecto: `cantidad_comercial: 1047`, `cantidad_foc: 33`.\nIncorrecto: `cantidad_comercial: 1080` (ese es el total derivado).\n\n## Total general\n\n\"cantidad_total\" es el total que DECLARA el anexo en su fila de totales, copiado tal cual. Si el anexo no declara un total, va null. No lo calcules sumando renglones.\n\n## Resto de los campos\n\nCada campo tiene su descripción en el formato de salida — seguílas al pie de la letra, sobre todo las de `unidad_medida` y `pais_origen`, que exigen vocabulario normalizado.\n\nSi un campo no aparece en el documento, usá null. No inventes datos ni calcules valores que no figuren.",
+          "maxIterations": 4,
+          "enableStreaming": false
+        }
+      },
+      "id": "76fe4285-b433-497a-b397-e46b52825c77",
+      "name": "Agente Anexo",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        3168,
+        -1040
+      ],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"cliente_importador\": { \"type\": [\"string\", \"null\"] },\n    \"proveedor\": { \"type\": [\"string\", \"null\"] },\n    \"numero_invoice\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de invoice/factura a la que acompaña este anexo\" },\n    \"po_numero\": { \"type\": [\"string\", \"null\"], \"description\": \"N° de orden de compra / purchase order\" },\n    \"items\": {\n      \"type\": [\"array\", \"null\"],\n      \"description\": \"Una entrada por renglón del anexo\",\n      \"items\": {\n        \"type\": \"object\",\n        \"properties\": {\n          \"numero_parte\": { \"type\": [\"string\", \"null\"] },\n          \"descripcion\": { \"type\": [\"string\", \"null\"] },\n          \"cantidad_comercial\": {\n            \"type\": [\"number\", \"null\"],\n            \"description\": \"Cantidad de la factura comercial (Quantity / Q / Quantity Commercial Invoice / UNITS). Si el anexo tiene UNA SOLA columna de cantidad, su valor va SIEMPRE acá. Copiar el número tal como figura. NUNCA sumar con la columna FOC ni con ninguna otra: la suma se hace después, fuera del modelo.\"\n          },\n          \"cantidad_foc\": {\n            \"type\": [\"number\", \"null\"],\n            \"description\": \"Cantidad free of charge (FOC / Free of Charge / Quantity FOC / sin cargo). Reglas: si el anexo NO tiene columna FOC, devolver null. Si tiene columna FOC pero la celda de este renglón está vacía, es un guión o un cero, devolver 0. Copiar el número tal como figura, nunca calcularlo por diferencia contra otra columna.\"\n          },\n          \"precio_unitario\": { \"type\": [\"number\", \"null\"] },\n          \"unidad_medida\": {\n            \"type\": [\"string\", \"null\"],\n            \"enum\": [\"KG\", \"MTS\", \"LT\", \"PC\", \"PAA\", \"ST\", \"GR\", \"MLM\", \"CTM\", \"TOM\", \"MLT\", null],\n            \"description\": \"Unidad de medida del renglón, normalizada a uno de estos códigos exactos. Reglas de mapeo: KG = kilos, kgs, kilogramos, kilograms; MTS = metros, meters, m, mtr; LT = litros, liters, l; PC = unidad, unidades, pieza, piezas, pcs, pieces, units, u, ea, each; PAA = par, pares, pair, pairs, pr; ST = set, sets, juego, juegos, kit; GR = gramos, grams, g; MLM = milímetros, millimeters, mm; CTM = centímetros, centimeters, cm; TOM = toneladas, tons, tonnes, tn, t; MLT = mililitros, milliliters, ml. Si la unidad no figura en el documento o no encaja en ninguna de estas categorías, devolver null. Nunca inventar una unidad.\"\n          },\n          \"pais_origen\": {\n            \"type\": [\"string\", \"null\"],\n            \"description\": \"País de fabricación del renglón (Manufacturing Country / Country of Origin / Made in). Devolver el nombre en español, en MAYÚSCULAS, sin siglas ni abreviaturas. Usar exactamente uno de estos nombres cuando corresponda: ALEMANIA, ARGENTINA, AUSTRIA, BELGICA, BRASIL, CANADA, CHILE, CHINA, DINAMARCA, EEUU, ESPAÑA, FILIPINA, FRANCIA, HOLANDA, HONG KONG, HUNGRIA, INDONESIA, ISRAEL, ITALIA, JAPON, KOREA, MALASIA, MEXICO, NORUEGA, POLONIA, PORTUGAL, REINO UNIDO, REPUBLICA CHECA, SINGAPUR, SUECIA, SUIZA, TAILANDIA, TAIWAN, TURQUIA, URUGUAY, VIETNAM. Equivalencias frecuentes: 'P.R. CHINA', 'PRC', 'CN', 'MADE IN CHINA' => CHINA; 'USA', 'U.S.A.', 'UNITED STATES' => EEUU; 'SOUTH KOREA', 'COREA DEL SUR', 'KR' => KOREA; 'UK', 'UNITED KINGDOM', 'GRAN BRETAÑA' => REINO UNIDO; 'NETHERLANDS', 'PAISES BAJOS' => HOLANDA. Si el anexo declara un solo país para todo el documento (por ejemplo 'ORIGIN: CHINA' en el encabezado), repetirlo en cada renglón. Si el país no figura, devolver null. Si figura un país que no está en la lista, devolverlo igual en mayúsculas y en español — nunca inventarlo ni forzarlo a uno de la lista.\"\n          }\n        },\n        \"required\": [\"numero_parte\", \"descripcion\", \"cantidad_comercial\", \"cantidad_foc\", \"precio_unitario\", \"unidad_medida\", \"pais_origen\"]\n      }\n    },\n    \"cantidad_total\": { \"type\": [\"number\", \"null\"], \"description\": \"Total general de unidades que declara el anexo, tal como figura en el documento. No calcularlo sumando renglones: si el anexo no declara un total, devolver null.\" }\n  },\n  \"required\": [\"cliente_importador\", \"proveedor\", \"numero_invoice\", \"po_numero\", \"items\", \"cantidad_total\"]\n}"
+      },
+      "id": "5c83ec80-02e7-4e0f-abff-f1404dfe6d17",
+      "name": "Parser Anexo",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        3328,
+        -848
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "df1",
+              "name": "messageId",
+              "value": "={{ $('Clasificar Documento').item.json.messageId }}",
+              "type": "string"
+            },
+            {
+              "id": "df2",
+              "name": "filename",
+              "value": "={{ $('Clasificar Documento').item.json.filename }}",
+              "type": "string"
+            },
+            {
+              "id": "df3",
+              "name": "tipo_doc",
+              "value": "factura",
+              "type": "string"
+            },
+            {
+              "id": "df4",
+              "name": "doc",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "0fdb4986-de65-435f-b65a-97ac1937ccd3",
+      "name": "Doc Factura",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3616,
+        -1520
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1c0e1d2-0001-4a10-9b21-doc0anexo0001",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{ $('Clasificar Documento').item.json.messageId }}"
+            },
+            {
+              "id": "a1c0e1d2-0002-4a10-9b21-doc0anexo0002",
+              "name": "filename",
+              "type": "string",
+              "value": "={{ $('Clasificar Documento').item.json.filename }}"
+            },
+            {
+              "id": "a1c0e1d2-0003-4a10-9b21-doc0anexo0003",
+              "name": "tipo_doc",
+              "type": "string",
+              "value": "anexo"
+            },
+            {
+              "id": "a1c0e1d2-0004-4a10-9b21-doc0anexo0004",
+              "name": "doc",
+              "type": "object",
+              "value": "={{ (() => {\n  const o = $json.output || {};\n\n  // El modelo devuelve cantidad_comercial y cantidad_foc por separado.\n  // La suma se hace aca, no en el modelo. Regla clave: si NINGUNA de las dos\n  // vino, cantidad queda null. Nunca 0 - un cero silencioso en una declaracion\n  // aduanera es peor que un dato faltante.\n  const items = (o.items || []).map((it) => {\n    const c = it.cantidad_comercial;\n    const f = it.cantidad_foc;\n    const hayC = c !== null && c !== undefined && c !== '';\n    const hayF = f !== null && f !== undefined && f !== '';\n\n    let cantidad;\n    if (hayC || hayF) {\n      cantidad = (hayC ? Number(c) || 0 : 0) + (hayF ? Number(f) || 0 : 0);\n    } else {\n      // Respaldo por si el schema viejo todavia devuelve 'cantidad'.\n      cantidad = it.cantidad ?? null;\n    }\n\n    return { ...it, cantidad };\n  });\n\n  return { ...o, items };\n})() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6fd7aa0b-525a-43e4-adaa-b98c5c64a6c3",
+      "name": "Doc Anexo",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3616,
+        -1040
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dt1",
+              "name": "messageId",
+              "value": "={{ $('Clasificar Documento').item.json.messageId }}",
+              "type": "string"
+            },
+            {
+              "id": "dt2",
+              "name": "filename",
+              "value": "={{ $('Clasificar Documento').item.json.filename }}",
+              "type": "string"
+            },
+            {
+              "id": "dt3",
+              "name": "tipo_doc",
+              "value": "transporte",
+              "type": "string"
+            },
+            {
+              "id": "dt4",
+              "name": "doc",
+              "value": "={{ $json.output }}",
+              "type": "object"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c71c62b3-3a68-4825-b03a-5c703a0d06c8",
+      "name": "Doc Transporte",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3616,
+        -592
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "dp1",
+              "name": "messageId",
+              "type": "string",
+              "value": "={{ $('Clasificar Documento').item.json.messageId }}"
+            },
+            {
+              "id": "dp2",
+              "name": "filename",
+              "type": "string",
+              "value": "={{ $('Clasificar Documento').item.json.filename }}"
+            },
+            {
+              "id": "dp3",
+              "name": "tipo_doc",
+              "type": "string",
+              "value": "packing_list"
+            },
+            {
+              "id": "dp4",
+              "name": "doc",
+              "type": "object",
+              "value": "={{ (() => {\n  const o = $json.output || {};\n  const t = o.tabla || {};\n  const texto = String($('Clasificar Documento').item.json.texto || '');\n\n  const num = (v) => {\n    if (v === null || v === undefined || v === '') return null;\n    if (typeof v === 'number') return v;\n    let s = String(v).trim().replace(/[^\\d.,-]/g, '');\n    if (s === '') return null;\n    const iC = s.lastIndexOf(','), iP = s.lastIndexOf('.');\n    if (iC !== -1 && iP !== -1) { if (iC > iP) s = s.replace(/\\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); }\n    else if (iC !== -1) { s = s.replace(',', '.'); }\n    const f = parseFloat(s);\n    return isNaN(f) ? null : f;\n  };\n\n  // Parser de linea CSV que respeta comillas: \"169,50 \" es UNA celda.\n  const parseCSV = (linea) => {\n    const out = []; let cur = ''; let dentro = false;\n    for (let i = 0; i < linea.length; i++) {\n      const ch = linea[i];\n      if (ch === '\"') {\n        if (dentro && linea[i + 1] === '\"') { cur += '\"'; i++; }\n        else dentro = !dentro;\n      } else if (ch === ',' && !dentro) { out.push(cur); cur = ''; }\n      else cur += ch;\n    }\n    out.push(cur);\n    return out.map((c) => c.trim());\n  };\n\n  const lineas = texto.split(/\\r?\\n/);\n  const norm = (s) => String(s || '').replace(/\\s+/g, ' ').trim();\n\n  // Ubicar donde arrancan los datos. Primero por la fila que indico el modelo;\n  // si no aparece textual, por la linea siguiente al encabezado.\n  let inicio = -1;\n  const objetivo = norm(t.primera_fila_datos_texto);\n  if (objetivo) {\n    inicio = lineas.findIndex((l) => norm(l) === objetivo);\n    if (inicio === -1) {\n      const prefijo = objetivo.slice(0, 40);\n      inicio = lineas.findIndex((l) => norm(l).startsWith(prefijo));\n    }\n  }\n  if (inicio === -1 && norm(t.encabezado_texto)) {\n    const h = lineas.findIndex((l) => norm(l) === norm(t.encabezado_texto));\n    if (h !== -1) inicio = h + 1;\n  }\n\n  const col = (fila, n) => (n && n >= 1 && n <= fila.length) ? fila[n - 1] : '';\n\n  const detalle_lineas = [];\n  let leidas = 0;\n  if (inicio !== -1 && t.col_numero_parte) {\n    for (let i = inicio; i < lineas.length; i++) {\n      const bruta = lineas[i];\n      if (!bruta || !bruta.trim()) continue;\n      const fila = parseCSV(bruta);\n      leidas++;\n      const parte = col(fila, t.col_numero_parte);\n      if (!parte) continue; // encabezados, totales y pies quedan afuera\n      const c = num(col(fila, t.col_cantidad_comercial));\n      const f = num(col(fila, t.col_cantidad_foc));\n      if (c === null && f === null) continue;\n      detalle_lineas.push({\n        numero_parte: parte,\n        cantidad_comercial: c,\n        cantidad_foc: f,\n        cantidad: (c || 0) + (f || 0),\n        contenedor: col(fila, t.col_contenedor) || null,\n        peso_bruto: num(col(fila, t.col_peso_bruto)),\n        cantidad_bultos: num(col(fila, t.col_bultos)),\n      });\n    }\n  }\n\n  // Contenedores: identidad del modelo, numeros sumados de los renglones.\n  const agr = {};\n  for (const l of detalle_lineas) {\n    const k = String(l.contenedor || '').toUpperCase().replace(/[^A-Z0-9]/g, '');\n    if (!k) continue;\n    if (!agr[k]) agr[k] = { peso: 0, bultos: 0, hayPeso: false, hayBultos: false };\n    if (l.peso_bruto !== null) { agr[k].peso += l.peso_bruto; agr[k].hayPeso = true; }\n    if (l.cantidad_bultos !== null) { agr[k].bultos += l.cantidad_bultos; agr[k].hayBultos = true; }\n  }\n\n  const contenedores_detalle = (o.contenedores_detalle || []).map((cc) => {\n    const k = String(cc.contenedor || '').toUpperCase().replace(/[^A-Z0-9]/g, '');\n    const a = agr[k];\n    return {\n      ...cc,\n      peso_bruto: a && a.hayPeso ? a.peso.toFixed(2) : null,\n      cantidad_bultos: a && a.hayBultos ? a.bultos : null,\n    };\n  });\n\n  const declarados = num(o.cantidad_contenedores);\n  const cantidad_contenedores = declarados !== null ? declarados : (contenedores_detalle.length || null);\n\n  const totC = num(o.cantidad_total_comercial), totF = num(o.cantidad_total_foc);\n  const cantidad_total = (totC === null && totF === null) ? null : (totC || 0) + (totF || 0);\n\n  return {\n    ...o,\n    detalle_lineas,\n    contenedores_detalle,\n    cantidad_total_comercial: totC,\n    cantidad_total_foc: totF,\n    cantidad_total,\n    cantidad_contenedores,\n    // Para auditar la extraccion desde el cuadro comparativo.\n    extraccion: {\n      lineas_leidas: leidas,\n      renglones_extraidos: detalle_lineas.length,\n      inicio_encontrado: inicio !== -1,\n      texto_truncado: texto.length >= 30000,\n    },\n  };\n})() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a0611893-88f5-4765-afa8-315bc104c081",
+      "name": "Doc PL",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        3616,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=media",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "={{ $binary.attachment_0.mimeType }}"
+            },
+            {
+              "name": "Connection",
+              "value": "close"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {
+          "timeout": 20000
+        }
+      },
+      "id": "1faa0089-d585-47ce-b5db-4c3b53459fee",
+      "name": "Drive: Subir DOCX",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        560,
+        224
+      ],
+      "retryOnFail": true,
+      "waitBetweenTries": 2000,
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}/copy",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"mimeType\": \"{{ ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword'].includes($('Split Adjuntos').item.json.mimeType) ? 'application/vnd.google-apps.document' : 'application/vnd.google-apps.spreadsheet' }}\", \"name\": \"tmp_conversion_{{ $('Split Adjuntos').item.json.messageId }}\" }",
+        "options": {
+          "timeout": 25000
+        }
+      },
+      "id": "f908d040-9ffe-4e73-a737-13628e7a1253",
+      "name": "Drive: Convertir a Google Doc",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        784,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}/export",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "mimeType",
+              "value": "={{ ['application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/msword'].includes($('Split Adjuntos').item.json.mimeType) ? 'text/plain' : 'text/csv' }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 25000
+        }
+      },
+      "id": "acc19032-0f66-4929-8d12-4c559ca9cd95",
+      "name": "Drive: Exportar texto",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        976,
+        224
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "td1",
+              "name": "text",
+              "value": "={{ $json.data }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "bbbd6def-58e7-4518-be1e-e51824d90bcf",
+      "name": "Texto DOCX",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1232,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Drive: Subir DOCX').item.json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {}
+      },
+      "id": "80a8b98e-2865-4a43-92e3-e417aeeb7c9e",
+      "name": "Drive: Borrar DOCX temp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1168,
+        384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "DELETE",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $('Drive: Convertir a Google Doc').item.json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {}
+      },
+      "id": "178c2268-7eae-48c9-990d-a5138535552d",
+      "name": "Drive: Borrar Google Doc temp",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1392,
+        384
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "portal-documentos",
+        "options": {
+          "allowedOrigins": "*",
+          "binaryPropertyName": "data",
+          "responseCode": {
+            "values": {}
+          },
+          "responseData": "Documentos recibidos. Procesando."
+        }
+      },
+      "id": "f655fb9a-e8dd-4311-a611-d37981bd72a4",
+      "name": "Portal Documentos",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1072,
+        -32
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const b = $json.body ?? {};\nconst padreId = 'YOUR_DRIVE_ROOT_FOLDER_ID';\nconst clean = (s) => (s ?? '').toString().trim().replace(/[\\\\/'\"\\n\\r]/g, '').replace(/\\s+/g, ' ');\nconst cliente = clean(b.cliente) || 'Sin cliente';\nconst operacion = clean(b.numero_operacion) || ('op_' + Date.now());\nconst modo = clean(b.modo_transporte) || 'sin especificar';\nconst now = new Date();\nconst anio = String(now.getFullYear());\nconst mes = String(now.getMonth() + 1).padStart(2, '0');\nreturn [{ json: { padreId, cliente, anio, mes, operacion, modo } }];"
+      },
+      "id": "ee13c6ce-1828-462d-ad58-3cc8ff89b75e",
+      "name": "Ctx Operación",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -432,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ \"name='\" + $('Ctx Operación').item.json.cliente + \"' and '\" + $('Ctx Operación').item.json.padreId + \"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false\" }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name)"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fc3d7814-3155-42f1-8e8f-ebe7c8b5601f",
+      "name": "Buscar Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -256,
+        1232
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cc1",
+              "leftValue": "={{ ($json.files || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "7cfddfab-8cad-498b-992a-f74512d230b2",
+      "name": "¿Crear Cliente?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -32,
+        1232
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"name\": \"{{ $('Ctx Operación').item.json.cliente }}\", \"mimeType\": \"application/vnd.google-apps.folder\", \"parents\": [\"{{ $('Ctx Operación').item.json.padreId }}\"] }",
+        "options": {}
+      },
+      "id": "58da0502-d377-4360-87ea-1716c017ccc1",
+      "name": "Crear Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        160,
+        1072
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "idc",
+              "name": "parentId",
+              "value": "={{ $json.id ?? $json.files[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ae04cb7f-c8ca-4d62-8b20-abe7837f1604",
+      "name": "ID Cliente",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        368,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ \"name='\" + $('Ctx Operación').item.json.anio + \"' and '\" + $('ID Cliente').item.json.parentId + \"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false\" }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name)"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "5e1d8def-02a6-40cb-a474-866f8b5d8460",
+      "name": "Buscar Año",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        512,
+        1248
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "ca1",
+              "leftValue": "={{ ($json.files || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "8d706e57-9cf3-4520-8267-bb8d347ba3b2",
+      "name": "¿Crear Año?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        688,
+        1248
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"name\": \"{{ $('Ctx Operación').item.json.anio }}\", \"mimeType\": \"application/vnd.google-apps.folder\", \"parents\": [\"{{ $('ID Cliente').item.json.parentId }}\"] }",
+        "options": {}
+      },
+      "id": "fff92fb0-71ec-4f2b-9a8c-6c61d97ca28e",
+      "name": "Crear Año",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        848,
+        1072
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ida",
+              "name": "parentId",
+              "value": "={{ $json.id ?? $json.files[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "fdce5908-ff20-4559-b1b2-d3484a21b043",
+      "name": "ID Año",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1024,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ \"name='\" + $('Ctx Operación').item.json.mes + \"' and '\" + $('ID Año').item.json.parentId + \"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false\" }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name)"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "68ae311f-0222-4ae8-a538-82d788d52f24",
+      "name": "Buscar Mes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1216,
+        1264
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "cm1",
+              "leftValue": "={{ ($json.files || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "23f73292-df9e-4840-9953-afc1cd01ed71",
+      "name": "¿Crear Mes?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1440,
+        1264
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"name\": \"{{ $('Ctx Operación').item.json.mes }}\", \"mimeType\": \"application/vnd.google-apps.folder\", \"parents\": [\"{{ $('ID Año').item.json.parentId }}\"] }",
+        "options": {}
+      },
+      "id": "ee7e0a56-5008-48a6-9a99-620ac10e0cf0",
+      "name": "Crear Mes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1648,
+        1088
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "idm",
+              "name": "parentId",
+              "value": "={{ $json.id ?? $json.files[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "95e2f909-1529-453a-a50d-178181e3ec2c",
+      "name": "ID Mes",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1824,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ \"name='\" + $('Ctx Operación').item.json.operacion + \"' and '\" + $('ID Mes').item.json.parentId + \"' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false\" }}"
+            },
+            {
+              "name": "fields",
+              "value": "files(id,name)"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            },
+            {
+              "name": "includeItemsFromAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "088a022e-0ccb-467a-9128-06260cce6d03",
+      "name": "Buscar Operación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2016,
+        1280
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "co1",
+              "leftValue": "={{ ($json.files || []).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "d900fc6a-79b6-4eec-9d02-987b58e3f888",
+      "name": "¿Crear Operación?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        2208,
+        1280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/drive/v3/files",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "fields",
+              "value": "id"
+            },
+            {
+              "name": "supportsAllDrives",
+              "value": "true"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={ \"name\": \"{{ $('Ctx Operación').item.json.operacion }}\", \"mimeType\": \"application/vnd.google-apps.folder\", \"parents\": [\"{{ $('ID Mes').item.json.parentId }}\"] }",
+        "options": {}
+      },
+      "id": "065722af-5dec-47ee-a00a-75eb60b80804",
+      "name": "Crear Operación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2384,
+        1088
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ido",
+              "name": "parentId",
+              "value": "={{ $json.id ?? $json.files[0].id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "6d9d656a-29b7-4892-86c8-54dd58e1e266",
+      "name": "ID Operación",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2560,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const folderId = $('ID Operación').item.json.parentId;\nconst files = $('Split Adjuntos').all();\nreturn files.map((f) => ({\n  json: { folderId, filename: f.json.filename, tipo_doc: f.json.tipo_doc },\n  binary: f.binary,\n}));"
+      },
+      "id": "bccd7563-af9e-4db2-a07c-17eb70fba4f5",
+      "name": "Archivos a subir",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2880,
+        1296
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://www.googleapis.com/upload/drive/v3/files?uploadType=media&supportsAllDrives=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "={{ $binary.attachment_0.mimeType }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "attachment_0",
+        "options": {}
+      },
+      "id": "2f1ed191-d509-48c5-aa6b-4ea2acb45f58",
+      "name": "Subir a Drive (media)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3184,
+        1296
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.id }}?addParents={{ $('Archivos a subir').item.json.folderId }}&removeParents=root&supportsAllDrives=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ name: $('Archivos a subir').item.json.filename }) }}",
+        "options": {}
+      },
+      "id": "f7dd872d-2082-4973-a35e-ed2cb7683e53",
+      "name": "Ubicar en carpeta",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        3456,
+        1296
+      ],
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "id": "4a50b59e-7caf-4045-9328-df1ab1a21fea",
+      "name": "Juntar Docs",
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        4192,
+        -192
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Cuadro comparativo de la operacion: una fila por concepto, una columna por\n// documento. Muestra los cuatro valores lado a lado en vez de solo las\n// diferencias, para poder auditar la operacion completa de un vistazo.\n//\n// Convenciones de celda:\n//   valor           el documento declara el dato\n//   null            el documento deberia traerlo y no vino\n//   —               el concepto no aplica a ese documento\n//   sin documento   ese documento no llego en este legajo\n//\n// Estados de la fila:\n//   SI   los documentos que declaran el dato coinciden\n//   NO   no coinciden\n//   NA   NO VERIFICABLE: dos o mas documentos presentes deberian traer el dato\n//        y al menos uno no lo trajo. NO es lo mismo que \"coincide\": es que no\n//        se pudo comparar. Antes esto salia como '-' y se veia igual que un OK.\n//   -    no hay cruce posible por diseño (un solo documento declara el dato)\nconst grab = (n) => { try { const a = $(n).all(); return a.length ? a[0].json : null; } catch (e) { return null; } };\nconst jFac = grab('Doc Factura'), jAnx = grab('Doc Anexo'), jPl = grab('Doc PL'), jBl = grab('Doc Transporte');\nconst fac = jFac?.doc ?? null, anx = jAnx?.doc ?? null, pl = jPl?.doc ?? null, bl = jBl?.doc ?? null;\n// El numero de operacion sale del webhook, que es donde lo tipeo el analista.\n// Los documentos son el respaldo por si el body no lo trajera.\nconst bodyWebhook = (() => { try { return $('Portal Documentos').first().json.body ?? {}; } catch (e) { return {}; } })();\nconst operacion = String(bodyWebhook.numero_operacion ?? '').trim()\n  || jFac?.messageId || jAnx?.messageId || jPl?.messageId || jBl?.messageId\n  || 'Sin operacion';\nconst COLS = [\n  { k: 'fac', titulo: 'Factura', doc: fac },\n  { k: 'anx', titulo: 'Anexo', doc: anx },\n  { k: 'pl', titulo: 'Packing List', doc: pl },\n  { k: 'bl', titulo: 'Certificado', doc: bl },\n];\nconst S = (v) => (v === undefined || v === null) ? '' : v.toString().trim();\nconst K = (v) => S(v).toUpperCase().replace(/[^A-Z0-9]/g, '');\nconst N = (v) => { if (v === undefined || v === null) return null; let s = v.toString().trim().replace(/[^\\d.,-]/g, ''); if (s === '') return null; if (s.includes('.') && s.includes(',')) s = s.replace(/\\./g, '').replace(',', '.'); else if (s.includes(',')) s = s.replace(',', '.'); const f = parseFloat(s); return isNaN(f) ? null : f; };\n// Pesos: conviven formato US (22,723.60) y europeo (22.723,60). El ultimo separador manda.\nconst P = (v) => { if (v === undefined || v === null) return null; let s = v.toString().trim().replace(/[^\\d.,-]/g, ''); if (s === '') return null; const iC = s.lastIndexOf(','), iP = s.lastIndexOf('.'); if (iC !== -1 && iP !== -1) { if (iC > iP) s = s.replace(/\\./g, '').replace(',', '.'); else s = s.replace(/,/g, ''); } else if (iC !== -1) { s = s.replace(',', '.'); } const f = parseFloat(s); return isNaN(f) ? null : f; };\nconst filas = [];\n// Si una clave NO esta en vals, el concepto no aplica a ese documento.\nconst fila = (grupo, concepto, vals, modo) => filas.push({ grupo, concepto, vals, modo: modo || 'texto' });\n// ---------- CABECERA ----------\nfila('Cabecera', 'N° invoice', { fac: fac?.numero_invoice ?? null, anx: anx?.numero_invoice ?? null });\nfila('Cabecera', 'Cliente / Importador', { fac: fac?.cliente_importador ?? null, anx: anx?.cliente_importador ?? null });\nfila('Cabecera', 'Proveedor', { fac: fac?.proveedor ?? null, anx: anx?.proveedor ?? null });\nfila('Cabecera', 'PO N°', { fac: fac?.po_numero ?? null, anx: anx?.po_numero ?? null, pl: pl?.po_numero ?? null, bl: bl?.po_numero ?? null });\nfila('Cabecera', 'NCM', { pl: pl?.ncm ?? null, bl: bl?.ncm ?? null });\nconst paisesAnexo = [...new Set((anx?.items || []).map((i) => S(i.pais_origen).toUpperCase()).filter(Boolean))];\nfila('Cabecera', 'País de origen', { fac: fac?.pais_origen ?? null, anx: paisesAnexo.length ? paisesAnexo.join(' / ') : null, bl: bl?.pais_origen ?? null });\nfila('Cabecera', 'Moneda', { fac: fac?.moneda ?? null });\nfila('Cabecera', 'Incoterm', { fac: fac?.incoterm ?? null });\nfila('Cabecera', 'N° de conocimiento', { bl: bl?.numero_conocimiento ?? null });\nfila('Cabecera', 'Transporte', { bl: bl?.transporte ?? null });\nfila('Cabecera', 'Flete Collect / Prepaid', { bl: bl?.flete_condicion ?? null });\n// ---------- IMPORTES ----------\nfila('Importes', 'Valor FOB total', { fac: fac?.valor_fob_total ?? null }, 'numero');\nfila('Importes', 'Flete', { fac: fac?.flete ?? null, bl: bl?.flete ?? null }, 'numero');\nfila('Importes', 'Seguro', { fac: fac?.seguro ?? null, bl: bl?.seguro ?? null }, 'numero');\n// ---------- CANTIDADES ----------\nconst sumaCampo = (arr, campo) => { if (!Array.isArray(arr) || !arr.length) return null; let t = 0, hubo = false; for (const x of arr) { const n = N(x[campo]); if (n !== null) { t += n; hubo = true; } } return hubo ? t : null; };\nfila('Cantidades', 'Cantidad total declarada', { fac: fac?.cantidad_total ?? null, anx: anx?.cantidad_total ?? null, pl: pl?.cantidad_total ?? null }, 'numero');\nfila('Cantidades', 'Suma de los renglones', {\n  fac: fac ? sumaCampo(fac.items, 'cantidad') : null,\n  anx: anx ? sumaCampo(anx.items, 'cantidad') : null,\n  pl: pl ? sumaCampo(pl.detalle_lineas, 'cantidad') : null,\n}, 'numero');\nfila('Cantidades', 'Renglones extraídos (informativo)', {\n  fac: fac ? (fac.items || []).length : null,\n  anx: anx ? (anx.items || []).length : null,\n  pl: pl ? (pl.detalle_lineas || []).length : null,\n}, 'ninguno');\n// Una fila por numero de parte. El packing list repite la parte por contenedor,\n// asi que se agrupa y se suma aca, en codigo.\nconst nombre = {};\nconst acumular = (arr) => { const out = {}; for (const x of (arr || [])) { const k = K(x.numero_parte); if (!k) continue; if (!nombre[k]) nombre[k] = S(x.numero_parte); const n = N(x.cantidad); out[k] = (out[k] ?? 0) + (n ?? 0); } return out; };\nconst qFac = acumular(fac?.items), qAnx = acumular(anx?.items), qPl = acumular(pl?.detalle_lineas);\nconst partes = [...new Set([...Object.keys(qFac), ...Object.keys(qAnx), ...Object.keys(qPl)])].sort();\nconst filasParte = [];\nfor (const k of partes) {\n  filasParte.push({\n    grupo: 'Cantidad por número de parte',\n    concepto: nombre[k] || k,\n    vals: { fac: fac ? (qFac[k] ?? null) : null, anx: anx ? (qAnx[k] ?? null) : null, pl: pl ? (qPl[k] ?? null) : null },\n    modo: 'numero',\n  });\n}\n// ---------- PESOS Y TOTALES ----------\nfila('Pesos y contenedores', 'Peso neto total', { pl: pl?.peso_neto ?? null }, 'peso');\nfila('Pesos y contenedores', 'Peso bruto total', { pl: pl?.peso_bruto ?? null, bl: bl?.peso_bruto_total ?? null }, 'peso');\nfila('Pesos y contenedores', 'Cantidad de contenedores', { pl: pl?.cantidad_contenedores ?? null, bl: bl?.cantidad_contenedores ?? null }, 'numero');\n// ---------- POR CONTENEDOR ----------\n// Los pesos y bultos del lado PL los calcula Doc PL sumando los renglones de\n// cada contenedor. Los del BL: peso de contenedores_detalle, bultos de\n// mercaderia_detalle agrupado por contenedor.\nconst mapC = (arr) => { const m = {}; for (const c of (arr || [])) { const k = K(c.contenedor); if (k) m[k] = c; } return m; };\nconst cPl = mapC(pl?.contenedores_detalle), cBl = mapC(bl?.contenedores_detalle);\nconst bultosBl = {};\nfor (const m of (bl?.mercaderia_detalle || [])) {\n  const k = K(m.contenedor);\n  if (!k) continue;\n  const n = N(m.cantidad_bultos);\n  if (n !== null) bultosBl[k] = (bultosBl[k] ?? 0) + n;\n}\nfor (const k of [...new Set([...Object.keys(cPl), ...Object.keys(cBl)])].sort()) {\n  const et = S(cPl[k]?.contenedor || cBl[k]?.contenedor) || k;\n  fila('Contenedores', et + ' · Precinto', { pl: cPl[k]?.precinto ?? null, bl: cBl[k]?.precinto ?? null });\n  fila('Contenedores', et + ' · Peso bruto', { pl: cPl[k]?.peso_bruto ?? null, bl: cBl[k]?.peso_bruto ?? null }, 'peso');\n  fila('Contenedores', et + ' · Bultos', { pl: cPl[k]?.cantidad_bultos ?? null, bl: bultosBl[k] ?? null }, 'numero');\n}\n// ---------- EVALUACION ----------\n// La distincion que importa:\n//   \"esperados\" = documentos que SI llegaron y que por diseño declaran este dato.\n//   Si esperados < 2 no hay cruce posible: '-' (no es una falla).\n//   Si esperados >= 2 pero alguno no trajo el valor: 'NA' (no verificable).\n//   Antes los dos casos daban '-' y una fila sin comparar se veia igual que un OK.\nconst evaluar = (f) => {\n  if (f.modo === 'ninguno') return '-';\n  const claves = Object.keys(f.vals);\n  const tiene = (k) => { const v = f.vals[k]; return v !== null && v !== undefined && v !== ''; };\n  const esperados = claves.filter((k) => COLS.find((c) => c.k === k)?.doc);\n  const presentes = esperados.filter(tiene);\n  if (esperados.length < 2) return '-';\n  // Nadie lo declaro: no hay nada que comparar y ya se ve como null en la tabla.\n  // Marcarlo NA floodearia todos los campos opcionales (flete y seguro en FOB, por ejemplo).\n  if (presentes.length === 0) return '-';\n  // Alguno si y alguno no: ESTE es el caso peligroso, el que antes se veia como un OK.\n  if (presentes.length < esperados.length) return 'NA';\n  const conv = f.modo === 'peso' ? P : (f.modo === 'numero' ? N : K);\n  const tol = f.modo === 'peso' ? 0.5 : (f.modo === 'numero' ? 0.01 : 0);\n  const base = conv(f.vals[presentes[0]]);\n  for (const k of presentes.slice(1)) {\n    const otro = conv(f.vals[k]);\n    if (base === null || otro === null) return 'NA';\n    if (f.modo === 'texto') { if (base !== otro) return 'NO'; }\n    else if (Math.abs(base - otro) > tol) return 'NO';\n  }\n  return 'SI';\n};\nconst todas = [...filas.filter((f) => f.grupo !== 'Contenedores'), ...filasParte, ...filas.filter((f) => f.grupo === 'Contenedores')];\nfor (const f of todas) f.estado = evaluar(f);\nconst conflictos = todas.filter((f) => f.estado === 'NO').length;\nconst noVerificables = todas.filter((f) => f.estado === 'NA').length;\n// Si hay muchisimas partes, mostrar solo las que tienen conflicto o no se pudieron verificar.\nconst MAX_PARTES = 40;\nlet recorte = null;\nlet visibles = todas;\nif (filasParte.length > MAX_PARTES) {\n  const ocultas = filasParte.filter((f) => f.estado === 'SI' || f.estado === '-').length;\n  visibles = todas.filter((f) => f.grupo !== 'Cantidad por número de parte' || f.estado === 'NO' || f.estado === 'NA');\n  recorte = filasParte.length + ' números de parte en total. Se listan solo los ' + (filasParte.length - ocultas) + ' con diferencia o sin verificar; ' + ocultas + ' coinciden y se omitieron.';\n}\n// ---------- HTML ----------\nconst esc = (v) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\"/g, '&quot;');\nconst fecha = new Date().toLocaleString('es-AR', { timeZone: 'America/Argentina/Buenos_Aires' });\nconst TH = 'padding:9px 10px;text-align:left;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:#6b7280;border-bottom:1px solid #e5e7eb;font-weight:600;';\nconst TD = 'padding:8px 10px;font-size:13px;line-height:1.4;border-bottom:1px solid #f1f5f9;vertical-align:top;';\nconst celda = (f, col) => {\n  if (!(col.k in f.vals)) return '<span style=\"color:#d1d5db;\">—</span>';\n  if (!col.doc) return '<span style=\"color:#d1d5db;font-style:italic;\">sin documento</span>';\n  const v = f.vals[col.k];\n  if (v === null || v === undefined || v === '') return '<span style=\"color:#b45309;font-family:monospace;font-size:12px;\">null</span>';\n  return esc(v);\n};\nlet cuerpo = '';\nconst grupos = [];\nfor (const f of visibles) { if (!grupos.length || grupos[grupos.length - 1].nombre !== f.grupo) grupos.push({ nombre: f.grupo, filas: [] }); grupos[grupos.length - 1].filas.push(f); }\nfor (const g of grupos) {\n  cuerpo += '<div style=\"margin:22px 0 8px;font-size:12px;font-weight:700;color:#111827;text-transform:uppercase;letter-spacing:.05em;\">' + esc(g.nombre) + '</div>';\n  cuerpo += '<table width=\"100%\" cellpadding=\"0\" cellspacing=\"0\" style=\"border-collapse:collapse;border:1px solid #e5e7eb;border-radius:6px;\">';\n  cuerpo += '<tr style=\"background:#f9fafb;\"><th style=\"' + TH + 'width:26%;\">Concepto</th>';\n  for (const c of COLS) cuerpo += '<th style=\"' + TH + '\">' + esc(c.titulo) + '</th>';\n  cuerpo += '</tr>';\n  for (const f of g.filas) {\n    const malo = f.estado === 'NO';\n    const dudoso = f.estado === 'NA';\n    const bg = malo ? 'background:#fef2f2;' : (dudoso ? 'background:#fffbeb;' : '');\n    const marca = malo\n      ? '<span style=\"color:#b91c1c;font-weight:700;margin-right:6px;\">≠</span>'\n      : (dudoso ? '<span style=\"color:#b45309;font-weight:700;margin-right:6px;\" title=\"No verificable\">?</span>' : '');\n    cuerpo += '<tr style=\"' + bg + '\">';\n    cuerpo += '<td style=\"' + TD + 'font-weight:600;color:#111827;\">' + marca + esc(f.concepto) + '</td>';\n    for (const c of COLS) cuerpo += '<td style=\"' + TD + 'color:#111827;\">' + celda(f, c) + '</td>';\n    cuerpo += '</tr>';\n  }\n  cuerpo += '</table>';\n  if (g.nombre === 'Cantidad por número de parte' && recorte) {\n    cuerpo += '<div style=\"margin-top:6px;font-size:11px;color:#6b7280;\">' + esc(recorte) + '</div>';\n  }\n}\nconst faltantes = COLS.filter((c) => !c.doc).map((c) => c.titulo);\nconst aviso = faltantes.length\n  ? '<div style=\"background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:10px 14px;margin:0 0 4px;color:#92400e;font-size:12px;\">No llegó: ' + esc(faltantes.join(', ')) + '</div>'\n  : '';\n// El chip de arriba: rojo si hay diferencias, ambar si no hay diferencias pero\n// quedaron conceptos sin poder verificar, verde solo si esta todo cruzado.\nconst chipBg = conflictos ? '#fee2e2' : (noVerificables ? '#fef3c7' : '#d1fae5');\nconst chipColor = conflictos ? '#b91c1c' : (noVerificables ? '#92400e' : '#047857');\nconst titulo = conflictos\n  ? conflictos + ' concepto' + (conflictos === 1 ? '' : 's') + ' con diferencia'\n  : (noVerificables ? 'Sin diferencias, pero ' + noVerificables + ' sin verificar' : 'Todos los conceptos coinciden');\nconst subChip = (conflictos && noVerificables)\n  ? '<span style=\"display:inline-block;background:#fef3c7;color:#92400e;border-radius:12px;padding:3px 12px;font-size:12px;font-weight:600;margin-left:6px;\">' + noVerificables + ' sin verificar</span>'\n  : '';\nconst html =\n  '<div style=\"font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;max-width:900px;margin:0 auto;padding:24px;color:#111827;\">' +\n  '<div style=\"border-bottom:2px solid #111827;padding-bottom:14px;margin-bottom:16px;\">' +\n  '<div style=\"font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:6px;\">Cuadro comparativo de la operación</div>' +\n  '<div style=\"font-size:20px;font-weight:700;\">' + esc(operacion) + '</div>' +\n  '<div style=\"margin-top:10px;\">' +\n  '<span style=\"display:inline-block;background:' + chipBg + ';color:' + chipColor + ';border-radius:12px;padding:3px 12px;font-size:12px;font-weight:600;\">' + titulo + '</span>' +\n  subChip +\n  '<span style=\"color:#6b7280;font-size:12px;margin-left:10px;\">' + todas.length + ' conceptos &middot; ' + fecha + '</span>' +\n  '</div></div>' +\n  aviso +\n  cuerpo +\n  '<div style=\"margin-top:20px;padding-top:14px;border-top:1px solid #e5e7eb;color:#9ca3af;font-size:11px;line-height:1.6;\">' +\n  '<strong style=\"color:#6b7280;\">Cómo leer:</strong> ' +\n  '<span style=\"color:#b91c1c;font-weight:700;\">≠</span> los documentos que declaran el dato no coinciden &middot; ' +\n  '<span style=\"color:#b45309;font-weight:700;\">?</span> no verificable: dos documentos deberían traer el dato y uno no lo trajo &middot; ' +\n  '<span style=\"color:#b45309;font-family:monospace;\">null</span> el documento debería traerlo y no vino &middot; ' +\n  '<span style=\"color:#d1d5db;\">—</span> el concepto no aplica a ese documento' +\n  '</div></div>';\nconst partesAsunto = [];\nif (conflictos) partesAsunto.push(conflictos + ' diferencia' + (conflictos === 1 ? '' : 's'));\nif (noVerificables) partesAsunto.push(noVerificables + ' sin verificar');\nconst asunto = partesAsunto.length\n  ? '[Cruces] ' + partesAsunto.join(' y ') + ' - ' + operacion\n  : '[Cruces] Sin diferencias - ' + operacion;\nreturn [{ json: { asunto, html, operacion, filas: todas, total_conceptos: todas.length, total_diferencias: conflictos, total_no_verificables: noVerificables, documentos_faltantes: faltantes } }];"
+      },
+      "id": "1ba7a0c1-5de1-4bfe-87ee-fad62c3478ee",
+      "name": "Cuadro Comparativo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4848,
+        -992
+      ]
+    },
+    {
+      "parameters": {
+        "content": "Guardado de los archivos en una carpeta de Google Drive nueva (ordedanas por cliente por año - mes- operación).",
+        "height": 544,
+        "width": 7200,
+        "color": "#470A0A"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -640,
+        1040
+      ],
+      "typeVersion": 1,
+      "id": "8eb35bc9-4b8c-45bc-8810-7199de25bc8a",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        4464,
+        -160
+      ],
+      "id": "f0af49e8-cefa-424a-8521-a7712745dd7c",
+      "name": "Aggregate"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "https://docs.google.com/spreadsheets/d/YOUR_MASTER_SHEET_ID/edit?gid=0#gid=0",
+          "mode": "url"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_MASTER_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "N° operación (legajo cliente)": "={{ $('Portal Documentos').first().json.body.numero_operacion }}",
+            "N° Carpeta TAI": "=",
+            "Cliente / Importador": "={{ $('Doc Factura').first().json.doc.cliente_importador }}",
+            "Proveedor": "={{ $('Doc Factura').first().json.doc.proveedor }}",
+            "N° Invoice (comercial)": "={{ $('Doc Factura').first().json.doc.numero_invoice }}",
+            "N° Invoice FOC (si aplica)": "={{ $('Doc Factura').first().json.doc.numero_invoice_foc }}",
+            "Valor FOB (total)": "={{ $('Doc Factura').first().json.doc.valor_fob_total }}",
+            "Moneda": "={{ $('Doc Factura').first().json.doc.moneda }}",
+            "Incoterm": "={{ $('Doc Factura').first().json.doc.incoterm }}",
+            "Flete": "={{ $('Doc Transporte').first().json.doc.flete }}",
+            "Conocimiento (N° BL/AWB/CRT)": "={{ $('Doc Transporte').first().json.doc.numero_conocimiento }}",
+            "N° Contenedor(es)": "={{ $('Doc Transporte').first().json.doc.contenedores_detalle[0].contenedor }}",
+            "N° Precinto(s)": "={{ $('Doc Transporte').first().json.doc.contenedores_detalle[0].precinto }}",
+            "Peso Neto / Peso Bruto": "={{ $('Doc Transporte').first().json.doc.contenedores_detalle[0].peso_bruto }}",
+            "Procedencia / Vía": "={{ $('Doc Transporte').first().json.doc.procedencia_via }}",
+            "Flete (condicion)": "={{ $json.data[1].doc.flete_condicion }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "N° operación (legajo cliente)",
+              "displayName": "N° operación (legajo cliente)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "N° Carpeta TAI",
+              "displayName": "N° Carpeta TAI",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cliente / Importador",
+              "displayName": "Cliente / Importador",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Proveedor",
+              "displayName": "Proveedor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "N° Invoice (comercial)",
+              "displayName": "N° Invoice (comercial)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "N° Invoice FOC (si aplica)",
+              "displayName": "N° Invoice FOC (si aplica)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Valor FOB (total)",
+              "displayName": "Valor FOB (total)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Flete (condicion)",
+              "displayName": "Flete (condicion)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Flete",
+              "displayName": "Flete",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Seguro",
+              "displayName": "Seguro",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Moneda",
+              "displayName": "Moneda",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Conocimiento (N° BL/AWB/CRT)",
+              "displayName": "Conocimiento (N° BL/AWB/CRT)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Transporte (naviera/aérea)",
+              "displayName": "Transporte (naviera/aérea)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "N° Contenedor(es)",
+              "displayName": "N° Contenedor(es)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "N° Precinto(s)",
+              "displayName": "N° Precinto(s)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Peso Neto / Peso Bruto",
+              "displayName": "Peso Neto / Peso Bruto",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Cantidad de contenedores",
+              "displayName": "Cantidad de contenedores",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Incoterm",
+              "displayName": "Incoterm",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Procedencia / Vía",
+              "displayName": "Procedencia / Vía",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Destinación",
+              "displayName": "Destinación",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Despachante / Agencia / Terminal / Depósito Fiscal",
+              "displayName": "Despachante / Agencia / Terminal / Depósito Fiscal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Canal",
+              "displayName": "Canal",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "E.T.A.",
+              "displayName": "E.T.A.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Num Ofic.",
+              "displayName": "Num Ofic.",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        5152,
+        -160
+      ],
+      "id": "2892111c-8d7b-413d-8d87-3a6fd609a53e",
+      "name": "Agrega datos al Excel maestro",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "title": "=Carga TAI - {{ $json.data[0].messageId }}",
+        "sheetsUi": {
+          "sheetValues": []
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        4752,
+        1216
+      ],
+      "id": "71c2ca25-0d96-45f2-aacd-bda3cf4b83bc",
+      "name": "Genera archivo para importar a TAI",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Genera archivo para importar a TAI').first().json.spreadsheetId }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Hoja 1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/YOUR_TAI_SHEET_ID/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "numero_parte",
+              "displayName": "numero_parte",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "cantidad",
+              "displayName": "cantidad",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "precio unitario",
+              "displayName": "precio unitario",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "origen",
+              "displayName": "origen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "unidad (tipo bulto)",
+              "displayName": "unidad (tipo bulto)",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "estado",
+              "displayName": "estado",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "ventaja",
+              "displayName": "ventaja",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        6224,
+        1296
+      ],
+      "id": "627ce0fd-fa75-4204-80c2-33479fc5810e",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "lineas",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        5776,
+        1296
+      ],
+      "id": "af501d39-02d6-467e-bfbd-f6e0d78ee17f",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://www.googleapis.com/drive/v3/files/{{ $json.spreadsheetId }}?addParents={{ $('ID Operación').first().json.parentId }}&removeParents=root&supportsAllDrives=true",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "googleDriveOAuth2Api",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        5392,
+        1296
+      ],
+      "id": "d473f397-1a11-415d-8df0-ecb1f5432ff5",
+      "name": "Mueve el archivo a la carpeta de Drive correspondiente",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "26688542-18f1-47ec-8cff-9582a544db5e",
+              "name": "lineas",
+              "type": "array",
+              "value": "={{ (() => {\n  const norm = (v) => String(v ?? '').trim().toUpperCase();\n\n  const anexo = $('Doc Anexo').isExecuted ? ($('Doc Anexo').first().json.doc?.items || []) : [];\n  const factura = $('Doc Factura').isExecuted ? ($('Doc Factura').first().json.doc?.items || []) : [];\n\n  // Pais de origen: la factura primero, el BL como respaldo.\n  // 'origen' del BL es el puerto (ej. 'SHEKOU PT, CHINA'); el campo bueno es pais_origen.\n  const paisFactura = $('Doc Factura').isExecuted ? ($('Doc Factura').first().json.doc?.pais_origen ?? null) : null;\n  const paisTransporte = $('Doc Transporte').isExecuted ? ($('Doc Transporte').first().json.doc?.pais_origen ?? null) : null;\n  const paisCabecera = paisFactura ?? paisTransporte ?? null;\n  const paisFuente = paisFactura ? 'factura' : (paisTransporte ? 'transporte' : 'sin dato');\n\n  // El anexo manda. La factura solo entra si no hubo anexo.\n  const fuente = anexo.length ? 'anexo' : 'factura';\n  const base = anexo.length ? anexo : factura;\n\n  // Indice de la factura por numero de parte, para completar huecos del anexo.\n  const idxFactura = {};\n  for (const f of factura) {\n    const k = norm(f.numero_parte);\n    if (k) idxFactura[k] = f;\n  }\n\n  return base.map((r) => {\n    const k = norm(r.numero_parte);\n    const enFactura = k ? idxFactura[k] : null;\n    return {\n      numero_parte: r.numero_parte ?? null,\n      descripcion: r.descripcion ?? null,\n      cantidad: r.cantidad ?? null,\n      precio_unitario: r.precio_unitario ?? enFactura?.precio_unitario ?? null,\n      unidad: r.unidad_medida ?? enFactura?.unidad_medida ?? null,\n      // Si algun dia el item trae su propio pais, ese gana sobre el de cabecera.\n      pais: r.pais_origen ?? enFactura?.pais_origen ?? paisCabecera,\n      pais_fuente: r.pais_origen || enFactura?.pais_origen ? 'item' : paisFuente,\n      fuente: fuente,\n    };\n  });\n})() }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5600,
+        1296
+      ],
+      "id": "d5e231a9-2287-46c1-abb0-320f601d3174",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2dd04553-6f43-4c99-bf66-4e3ad6b19e63",
+              "name": "numero_parte",
+              "value": "={{ $json.lineas.numero_parte }}",
+              "type": "string"
+            },
+            {
+              "id": "97cdbee4-32c3-4a0f-9db4-e5953751f309",
+              "name": "cantidad",
+              "value": "={{ $json.lineas.cantidad }}",
+              "type": "number"
+            },
+            {
+              "id": "5a50ab38-eec3-4ebf-bc4d-8cb28b88541a",
+              "name": "precio unitario",
+              "value": "={{ $json.lineas.precio_unitario }}",
+              "type": "string"
+            },
+            {
+              "id": "c6157b2c-3fb3-4f9e-a04b-4a87334f0704",
+              "name": "origen",
+              "value": "={{ ({\n  \"ALEMANIA\":\"438\",\"ARGENTINA\":\"200\",\"AUSTRIA\":\"405\",\"BELGICA\":\"406\",\"BRASIL\":\"203\",\n  \"CANADA\":\"204\",\"CHILE\":\"208\",\"CHINA\":\"310\",\"DINAMARCA\":\"409\",\"EEUU\":\"212\",\n  \"ESPAÑA\":\"410\",\"FILIPINA\":\"312\",\"FRANCIA\":\"412\",\"HOLANDA\":\"423\",\"HONG KONG\":\"341\",\n  \"HUNGRIA\":\"414\",\"INDONESIA\":\"316\",\"ISRAEL\":\"319\",\"ITALIA\":\"427\",\"JAPON\":\"320\",\n  \"KOREA\":\"309\",\"MALASIA\":\"326\",\"MEXICO\":\"218\",\"NORUEGA\":\"422\",\"POLONIA\":\"424\",\n  \"PORTUGAL\":\"425\",\"REINO UNIDO\":\"426\",\"REPUBLICA CHECA\":\"451\",\"SINGAPUR\":\"333\",\n  \"SUECIA\":\"429\",\"SUIZA\":\"430\",\"TAILANDIA\":\"335\",\"TAIWAN\":\"313\",\"TURQUIA\":\"436\",\n  \"URUGUAY\":\"225\",\"VIETNAM\":\"337\"\n})[$json.lineas.pais?.toUpperCase()?.trim()] ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3fcba35f-082d-4012-a68d-9571439d5b6d",
+              "name": "unidad (tipo bulto)",
+              "value": "={{ ({\n  \"KG\":\"01\",\"MTS\":\"02\",\"LT\":\"05\",\"PC\":\"07\",\"PAA\":\"08\",\"ST\":\"08\",\n  \"GR\":\"14\",\"MLM\":\"15\",\"CTM\":\"20\",\"TOM\":\"19\",\"MLT\":\"47\"\n})[$json.lineas.unidad?.toUpperCase()?.trim()] ?? \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "46284985-68f8-48f4-a624-af102494c1a9",
+              "name": "estado",
+              "value": "",
+              "type": "string"
+            },
+            {
+              "id": "f3d7ac85-1a9b-4829-9e66-2bccaae97a63",
+              "name": "ventaja",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        5984,
+        1296
+      ],
+      "id": "3f81dbda-6664-48ef-ae0b-0b6b52ff6fd7",
+      "name": "Fila Packing list"
+    },
+    {
+      "parameters": {
+        "content": "Extracción de la información de los documentos según el formato",
+        "height": 1872,
+        "width": 2224,
+        "color": "#3E3737"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -640,
+        -512
+      ],
+      "typeVersion": 1,
+      "id": "3478feec-f9a9-45b0-a3c4-bce68b715133",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "mode": "chooseBranch"
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        5088,
+        1296
+      ],
+      "id": "9cb647e1-784d-4383-a631-35826bcd0974",
+      "name": "Esepera a carpeta"
+    },
+    {
+      "parameters": {
+        "sendTo": "tu-email@ejemplo.com",
+        "subject": "IA no pudo procesar el documento",
+        "message": "=Revisar manualmente el documento ",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3616,
+        304
+      ],
+      "id": "0415cbcd-e52b-4a17-8193-abdf18e00998",
+      "name": "Send a message",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d744a112-7ab0-446b-87a6-b897e166ae81",
+              "name": "estado",
+              "value": "=Formato no soportado: {{ $('Split Adjuntos').item.json.mimeType ?? 'desconocido' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        2080,
+        32
+      ],
+      "id": "ce2e85b1-b09a-4c3c-94f7-710911bd0ed4",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "sendTo": "tu-email@ejemplo.com",
+        "subject": "={{ $('Cuadro Comparativo').first().json.asunto }}",
+        "message": "={{ $('Cuadro Comparativo').first().json.html }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        5328,
+        -992
+      ],
+      "id": "0c6d8f7a-0c6f-47ae-b583-002f16874f15",
+      "name": "Send a message1",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-5-mini"
+        },
+        "builtInTools": {},
+        "options": {
+          "reasoningEffort": "high",
+          "timeout": 150000,
+          "maxRetries": 0
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        3168,
+        304
+      ],
+      "id": "6700fc91-572c-49fe-970e-054b4e889a34",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Arma una fila por archivo subido, lista para insertar en la tabla `documentos`,\n// más los datos de la carpeta de Drive para actualizar la operación.\nconst body = $('Portal Documentos').first().json.body ?? {};\nconst operacionId = String(body.operacion_id ?? '').trim();\nconst carpetaId = $('ID Operación').first().json.parentId;\n\n// Tipos declarados por el operador en el portal\nlet docs = [];\ntry {\n  docs = typeof body.docs === 'string' ? JSON.parse(body.docs) : (body.docs ?? []);\n} catch (e) { docs = []; }\nif (!Array.isArray(docs)) docs = [];\n\nconst porNombre = new Map();\nfor (const d of docs) if (d && d.nombre_archivo) porNombre.set(String(d.nombre_archivo), d);\n\n// Lo que extrajo cada agente de IA, indexado por nombre de archivo\nconst extraccion = {};\nfor (const nodo of ['Doc Factura', 'Doc Anexo', 'Doc PL', 'Doc Transporte']) {\n  try {\n    for (const it of $(nodo).all()) {\n      const f = it.json?.filename;\n      if (f) extraccion[f] = it.json?.doc ?? null;\n    }\n  } catch (e) { /* ese documento no llegó en este legajo */ }\n}\n\nconst subidos = $input.all();               // salida de \"Ubicar en carpeta\"\nconst meta = $('Archivos a subir').all();   // nombre y tipo con los que se subió\n\nconst filas = subidos.map((it, i) => {\n  const driveId = it.json?.id ?? null;\n  const nombre = it.json?.name ?? meta[i]?.json?.filename ?? null;\n  const d = porNombre.get(nombre) ?? {};\n\n  const fila = {\n    operacion_id: operacionId,\n    tipo: d.tipo_doc || 'otro',\n    nombre_archivo: nombre,\n    drive_file_id: driveId,\n    drive_url: driveId ? 'https://drive.google.com/file/d/' + driveId + '/view' : null,\n    origen: 'n8n',\n  };\n  // grupo_id solo si es un reemplazo: si va null, el insert falla (la columna es NOT NULL\n  // con default). Omitirlo deja que Postgres genere uno nuevo.\n  if (d.grupo_id) fila.grupo_id = d.grupo_id;\n  if (extraccion[nombre]) fila.extraccion = extraccion[nombre];\n  return fila;\n});\n\nreturn [{\n  json: {\n    operacion_id: operacionId,\n    drive_folder_id: carpetaId,\n    drive_folder_url: 'https://drive.google.com/drive/folders/' + carpetaId,\n    filas,\n  },\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3664,
+        1616
+      ],
+      "id": "cd8dc98f-2cd8-4b4b-b4ff-9d37cdda58c7",
+      "name": "Filas para Supabase"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/documentos",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            },
+            {
+              "name": "Prefer",
+              "value": "return=minimal"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.filas) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        3936,
+        1616
+      ],
+      "id": "07b3f4ef-ea24-48eb-8e50-2f29c2606eee",
+      "name": "Supabase: guardar documentos",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/operaciones?id=eq.{{ $json.operacion_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": []
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ drive_folder_id: $json.drive_folder_id, drive_folder_url: $json.drive_folder_url }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        4160,
+        1616
+      ],
+      "id": "4e867997-95eb-42ac-a447-fd45f2db58a6",
+      "name": "Supabase: carpeta de la operación",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "content": "Supabase\n",
+        "height": 208,
+        "width": 1072,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        3536,
+        1600
+      ],
+      "typeVersion": 1,
+      "id": "4ef6c89c-b9df-4440-8f09-2f36d39d91e8",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://YOUR_SUPABASE_PROJECT_REF.supabase.co/rest/v1/cruces_documentales",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({\n  operacion_id: $('Portal Documentos').first().json.body.operacion_id,\n  resultado: ($json.total_diferencias + $json.total_no_verificables) > 0 ? 'con_observaciones' : 'ok',\n  campos: $json.filas.map(f => ({\n    grupo: f.grupo,\n    campo: f.concepto,\n    valores: f.vals,\n    estado: f.estado,\n    coincide: f.estado === 'SI'\n  })),\n  observaciones: [\n    $json.total_no_verificables ? ($json.total_no_verificables + ' concepto(s) no se pudieron verificar') : null,\n    $json.documentos_faltantes.length ? ('No llegó: ' + $json.documentos_faltantes.join(', ')) : null\n  ].filter(Boolean).join(' · ') || null\n}) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        5072,
+        -992
+      ],
+      "id": "b0122f34-e25e-4cfc-a768-f83e25464d0c",
+      "name": "cruce documental",
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "YOUR_CREDENTIAL_ID",
+          "name": "YOUR_CREDENTIAL_NAME"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Extract from File1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Drive: Subir DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Drive: Subir DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Drive: Subir DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Split Adjuntos": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Facturas",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Transporte",
+            "type": "ai_languageModel",
+            "index": 0
+          },
+          {
+            "node": "Agente Anexo",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Clasificar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File1": {
+      "main": [
+        [
+          {
+            "node": "Drive: Subir DOCX",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificar Documento": {
+      "main": [
+        [
+          {
+            "node": "Tipo de Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tipo de Documento": {
+      "main": [
+        [
+          {
+            "node": "Agente Facturas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente Anexo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente Transporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Agente Packing List",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Facturas": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente Facturas",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Transporte": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente Transporte",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Packing List": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente Packing List",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parser Anexo": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Agente Anexo",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Facturas": {
+      "main": [
+        [
+          {
+            "node": "Doc Factura",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Anexo": {
+      "main": [
+        [
+          {
+            "node": "Doc Anexo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Transporte": {
+      "main": [
+        [
+          {
+            "node": "Doc Transporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente Packing List": {
+      "main": [
+        [
+          {
+            "node": "Doc PL",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doc Factura": {
+      "main": [
+        [
+          {
+            "node": "Juntar Docs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Doc Anexo": {
+      "main": [
+        [
+          {
+            "node": "Juntar Docs",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Doc PL": {
+      "main": [
+        [
+          {
+            "node": "Juntar Docs",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Doc Transporte": {
+      "main": [
+        [
+          {
+            "node": "Juntar Docs",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Drive: Subir DOCX": {
+      "main": [
+        [
+          {
+            "node": "Drive: Convertir a Google Doc",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: Convertir a Google Doc": {
+      "main": [
+        [
+          {
+            "node": "Drive: Exportar texto",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: Exportar texto": {
+      "main": [
+        [
+          {
+            "node": "Texto DOCX",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Drive: Borrar DOCX temp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto DOCX": {
+      "main": [
+        [
+          {
+            "node": "Clasificar Documento",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Drive: Borrar DOCX temp": {
+      "main": [
+        [
+          {
+            "node": "Drive: Borrar Google Doc temp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Portal Documentos": {
+      "main": [
+        [
+          {
+            "node": "Split Adjuntos",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Ctx Operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ctx Operación": {
+      "main": [
+        [
+          {
+            "node": "Buscar Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Cliente": {
+      "main": [
+        [
+          {
+            "node": "¿Crear Cliente?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Crear Cliente?": {
+      "main": [
+        [
+          {
+            "node": "Crear Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ID Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Cliente": {
+      "main": [
+        [
+          {
+            "node": "ID Cliente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ID Cliente": {
+      "main": [
+        [
+          {
+            "node": "Buscar Año",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Año": {
+      "main": [
+        [
+          {
+            "node": "¿Crear Año?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Crear Año?": {
+      "main": [
+        [
+          {
+            "node": "Crear Año",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ID Año",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Año": {
+      "main": [
+        [
+          {
+            "node": "ID Año",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ID Año": {
+      "main": [
+        [
+          {
+            "node": "Buscar Mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Mes": {
+      "main": [
+        [
+          {
+            "node": "¿Crear Mes?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Crear Mes?": {
+      "main": [
+        [
+          {
+            "node": "Crear Mes",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ID Mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Mes": {
+      "main": [
+        [
+          {
+            "node": "ID Mes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ID Mes": {
+      "main": [
+        [
+          {
+            "node": "Buscar Operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Operación": {
+      "main": [
+        [
+          {
+            "node": "¿Crear Operación?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Crear Operación?": {
+      "main": [
+        [
+          {
+            "node": "Crear Operación",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "ID Operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear Operación": {
+      "main": [
+        [
+          {
+            "node": "ID Operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ID Operación": {
+      "main": [
+        [
+          {
+            "node": "Archivos a subir",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Archivos a subir": {
+      "main": [
+        [
+          {
+            "node": "Subir a Drive (media)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Subir a Drive (media)": {
+      "main": [
+        [
+          {
+            "node": "Ubicar en carpeta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Juntar Docs": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "Agrega datos al Excel maestro",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Genera archivo para importar a TAI",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Cuadro Comparativo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agrega datos al Excel maestro": {
+      "main": [
+        []
+      ]
+    },
+    "Genera archivo para importar a TAI": {
+      "main": [
+        [
+          {
+            "node": "Esepera a carpeta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Fila Packing list",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mueve el archivo a la carpeta de Drive correspondiente": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fila Packing list": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ubicar en carpeta": {
+      "main": [
+        [
+          {
+            "node": "Filas para Supabase",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Esepera a carpeta": {
+      "main": [
+        [
+          {
+            "node": "Mueve el archivo a la carpeta de Drive correspondiente",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cuadro Comparativo": {
+      "main": [
+        [
+          {
+            "node": "cruce documental",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente Packing List",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas para Supabase": {
+      "main": [
+        [
+          {
+            "node": "Supabase: guardar documentos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: guardar documentos": {
+      "main": [
+        [
+          {
+            "node": "Supabase: carpeta de la operación",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase: carpeta de la operación": {
+      "main": [
+        [
+          {
+            "node": "Esepera a carpeta",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "cruce documental": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true,
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "saveExecutionProgress": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "executionTimeout": 300
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
